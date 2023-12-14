@@ -3,7 +3,7 @@ Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
 .eslintrc.js (c) 2023
 Desc: description
 Created:  2023-12-09T02:11:52.534Z
-Modified: 2023-12-13T13:07:11.260Z
+Modified: 2023-12-13T18:56:00.578Z
 */
 
 // .eslintrc.js
@@ -47,5 +47,7 @@ module.exports = {
     '@stylistic/space-unary-ops': ['error', { words: true, nonwords: false }],
     '@stylistic/space-in-parens': ['error', 'never'],
     '@stylistic/no-whitespace-before-property': ['error'],
+    '@stylistic/type-annotation-spacing': ['error', { before: false, after: true }],
+    '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
   },
 }
