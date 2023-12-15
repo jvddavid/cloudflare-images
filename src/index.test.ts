@@ -3,10 +3,11 @@ Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
 index.test.ts (c) 2023
 Desc: description
 Created:  2023-12-13T12:12:42.214Z
-Modified: 2023-12-13T14:13:06.741Z
+Modified: 2023-12-15T01:40:54.651Z
 */
 import { describe, it, expect } from 'vitest'
-import { type CloudFlareAuth, CloudFlareImages } from '.'
+import { CloudFlareImages } from '.'
+import type { CloudFlareAuth } from '@/interfaces'
 
 function makeSut() {
   if (process.env.TEST_CLOUDFLARE_ACCOUNT_ID === undefined) {

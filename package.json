@@ -4,10 +4,10 @@
   "description": "Cloudflare Images API wrapper",
   "type": "commonjs",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "files": [
     "build"
   ],
-  "types": "build/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+github.com:jvddavid/cloudflare-images.git"

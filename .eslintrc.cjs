@@ -1,33 +1,12 @@
-/*
-Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
-.eslintrc.js (c) 2023
-Desc: description
-Created:  2023-12-09T02:11:52.534Z
-Modified: 2023-12-13T18:56:00.578Z
-*/
-
-// .eslintrc.js
+/* eslint-env node */
 module.exports = {
   env: {
-    'es2021': true,
-    'node': true
+    es2021: true,
+    node: true
   },
-  'extends': [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended'
-  ],
-  'overrides': [
-  ],
-  'parser': '@typescript-eslint/parser',
-  'parserOptions': {
-    'ecmaVersion': 'latest',
-    'sourceType': 'module',
-    'project': './tsconfig.json'
-  },
-  'plugins': [
-    '@typescript-eslint',
-    '@stylistic'
-  ],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint', '@stylistic'],
   rules: {
     '@stylistic/indent': ['error', 2],
     '@stylistic/quotes': ['error', 'single'],
@@ -49,5 +28,7 @@ module.exports = {
     '@stylistic/no-whitespace-before-property': ['error'],
     '@stylistic/type-annotation-spacing': ['error', { before: false, after: true }],
     '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
+    'camelcase': ['off'],
   },
+  root: true,
 }

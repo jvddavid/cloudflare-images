@@ -4,6 +4,7 @@ import { readdir, copyFile } from 'fs/promises'
 import { mkdirSync, rmSync } from 'fs'
 
 const srcPath = path.resolve(__dirname, '..', 'src')
+const entryPoint = path.resolve(srcPath, 'index.ts')
 const distPath = path.resolve(__dirname, '..', 'build')
 
 async function getFolderFiles(folder: string): Promise<string[]> {
@@ -61,9 +62,9 @@ async function main() {
 
   console.log('Building...')
   const build = await esbuild.build({
-    entryPoints,
+    entryPoints: [entryPoint],
     outdir: distPath,
-    bundle: false,
+    bundle: true,
     platform: 'node',
     target: 'node20',
     minify: true,
@@ -85,7 +86,6 @@ async function main() {
   console.log('Build complete')
 }
 
-// eslint-disable-next-line prettier/prettier
 main().catch((err) => {
   console.error(err)
   process.exit(1)

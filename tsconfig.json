@@ -108,6 +108,6 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*", ".eslintrc.js", "vitest.config.ts"] /* Specify an array of glob patterns that match files to be included in compilation. */,
+  "include": ["src/**/*", ".eslintrc.cjs", "vitest.config.ts"] /* Specify an array of glob patterns that match files to be included in compilation. */,
   "exclude": ["node_modules", "build"] /* Specify an array of glob patterns that match files to be excluded from compilation. */
 }
