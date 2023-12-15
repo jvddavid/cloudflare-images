@@ -3,11 +3,14 @@ Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
 index.ts (c) 2023
 Desc: description
 Created:  2023-12-13T11:57:06.523Z
-Modified: 2023-12-15T02:22:37.222Z
+Modified: 2023-12-15T14:20:33.638Z
 */
 
 import type { CloudFlareAuth, DefaultResponse, DirectUploadUrlV2, Image, ImageDetails, ListImages, ListImagesV2, Stats, UploadImage } from '@/interfaces'
+import axios from 'axios'
+import type { AxiosResponse, ResponseType, responseEncoding } from 'axios'
 import { HttpError } from './errors'
+import FormData from 'form-data'
 
 export default class CloudFlareImages {
   private readonly auth: CloudFlareAuth
@@ -26,7 +29,7 @@ export default class CloudFlareImages {
       page: page.toString(),
       per_page: perPage.toString()
     })
-    return await this.get<ListImages>(`${url}?${query.toString()}`)
+    return this.get<ListImages>(`${url}?${query.toString()}`)
   }
 
   async listV2(perPage: number = 1000, sort_order: 'asc' | 'desc' | null = null, continuation_token: string | null = null) {
@@ -37,115 +40,108 @@ export default class CloudFlareImages {
     })
     if (sort_order) query.append('sort_order', sort_order)
     if (continuation_token) query.append('continuation_token', continuation_token)
-    return await this.get<ListImagesV2>(`${url}?${query.toString()}`)
+    return this.get<ListImagesV2>(`${url}?${query.toString()}`)
   }
 
   async stats() {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/stats`
-    return await this.get<Stats>(url)
+    return this.get<Stats>(url)
   }
 
   async imageDetails(imageId: string) {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}`
-    return await this.get<ImageDetails>(url)
+    return this.get<ImageDetails>(url)
   }
 
   async baseImage(imageId: string) {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}/blob`
-    return await this.get<string>(url, 'text')
+    return this.get<Blob>(url, 'text', 'BASE64')
   }
 
   async directUploadUrlV2(expiry?: Date, metadata?: Record<string, string>, requireSignedURLs?: boolean) {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v2/direct_upload`
-    const body: Record<string, unknown> = {}
-    if (expiry) body.expiry = expiry.toISOString()
-    if (metadata) body.metadata = metadata
-    if (requireSignedURLs) body.requireSignedURLs = requireSignedURLs
-    return await this.post<DirectUploadUrlV2>(url, body)
+    const body = new FormData()
+    if (expiry) body.append('expiry', expiry.toISOString())
+    else {
+      body.append('expiry', new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString())
+    }
+    if (metadata) body.append('metadata', JSON.stringify(metadata), { contentType: 'application/json' })
+    if (requireSignedURLs) body.append('requireSignedURLs', requireSignedURLs.toString())
+    return this.post<DirectUploadUrlV2>(url, body, 'json', 'UTF-8')
+  }
+
+  async uploadImageURL(imageURL: string, metadata?: Record<string, string>, requireSignedURLs?: boolean) {
+    const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1`
+    const body = new FormData()
+    if (metadata) body.append('metadata', JSON.stringify(metadata), { contentType: 'application/json' })
+    if (requireSignedURLs) body.append('requireSignedURLs', requireSignedURLs.toString())
+    body.append('url', imageURL)
+    return this.post<UploadImage>(url, body)
   }
 
   async uploadImage(image: Buffer | string, metadata?: Record<string, string>, requireSignedURLs?: boolean) {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1`
-    const body: {
-      metadata?: Record<string, string>
-      requireSignedURLs?: boolean
-      // binary data
-      file?: Buffer
-      url?: string
-    } = {
-      metadata,
-      requireSignedURLs
-    }
-
-    if (image instanceof Buffer) {
-      body.file = image
-    } else if (typeof image === 'string') {
-      if (image.startsWith('http')) {
-        body.url = image
-      } else {
-        body.file = Buffer.from(image, 'base64')
-      }
+    const body = new FormData()
+    if (metadata) body.append('metadata', JSON.stringify(metadata), { contentType: 'application/json' })
+    if (requireSignedURLs) body.append('requireSignedURLs', requireSignedURLs.toString())
+    if (typeof image === 'string') {
+      body.append('file', Buffer.from(image), { contentType: 'image/*' })
     } else {
-      throw new Error('image must be a Buffer or a base64 string or a url')
+      body.append('file', image, { contentType: 'image/*' })
     }
-    return await this.post<UploadImage>(url, body)
+    return this.post<UploadImage>(url, body)
   }
 
   async deleteImage(imageId: string) {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}`
-    return await this.delete<Record<string, never>>(url)
+    return this.delete<Record<string, never>>(url)
   }
 
   async updateImage(imageId: string, metadata?: Record<string, string>, requireSignedURLs?: boolean) {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}`
-    return await this.patch<Image>(url, { metadata, requireSignedURLs })
+    return this.patch<Image>(url, { metadata, requireSignedURLs })
   }
 
-  private async get<Result>(url: string, type: 'json' | 'text' = 'json'): Promise<DefaultResponse<Result> > {
-    const response = await fetch(url, {
-      method: 'GET',
+  private async get<Result>(url: string, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
+    const response = await axios.get(url, {
       headers: this.getHeaders(),
+      responseEncoding: encoding,
+      responseType: type,
     })
-    return await this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(response, type)
   }
 
-  private async post<Result>(url: string, body: Record<string, unknown>, type: 'json' | 'text' = 'json'): Promise<DefaultResponse<Result> > {
-    const formData = new FormData()
-    for (const key in body) {
-      formData.append(key, body[key] as string)
-    }
-    const response = await fetch(url, {
-      method: 'POST',
+  private async post<Result>(url: string, body: FormData, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
+    const response = await axios.post(url, body, {
       headers: {
         ...this.getHeaders(),
-        'Content-Type': 'multipart/form-data'
+        ...body.getHeaders(),
+        'Content-Length': body.getLengthSync(),
       },
-      body: formData
+      responseEncoding: encoding,
+      responseType: type,
     })
-    return await this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(response, type)
   }
 
-  private async patch<Result>(url: string, body: Record<string, unknown>, type: 'json' | 'text' = 'json'): Promise<DefaultResponse<Result> > {
-    const response = await fetch(url, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-      body: JSON.stringify(body)
+  private async patch<Result>(url: string, body: Record<string, unknown>, type: ResponseType = 'json'): Promise<DefaultResponse<Result> > {
+    const response = await axios.patch(url, body, {
+      headers: this.getHeaders('application/json')
     })
-    return await this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(response, type)
   }
 
-  private async delete<Result>(url: string, type: 'json' | 'text' = 'json'): Promise<DefaultResponse<Result> > {
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: this.getHeaders(),
+  private async delete<Result>(url: string, type: ResponseType = 'json'): Promise<DefaultResponse<Result> > {
+    const response = await axios.delete(url, {
+      headers: this.getHeaders()
     })
-    return await this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(response, type)
   }
 
-  private async parseResponse<T>(response: Response, type: 'text' | 'json'): Promise<DefaultResponse<T>> {
-    if (!response.ok) {
+  private async parseResponse<T>(response: AxiosResponse, type: ResponseType): Promise<DefaultResponse<T>> {
+    if (!(response.status >= 200 && response.status < 300)) {
       if (response.status >= 400 && response.status < 500) {
-        return await response.json()
+        return response.data
       }
       throw new HttpError({
         code: response.status,
@@ -154,20 +150,21 @@ export default class CloudFlareImages {
     }
     switch (type) {
       case 'json':
-        return await response.json()
-      case 'text':
+        return response.data
+      default:
         return {
           success: true,
           errors: [],
           messages: [],
-          result: await response.text() as T
+          result: response.data
         }
     }
   }
 
-  private getHeaders() {
+  private getHeaders(contentType?: string) {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Accept': '*/*',
+      'User-Agent': 'CloudflareImages/1.0.0'
     }
     if ('token' in this.auth) {
       headers.Authorization = `Bearer ${this.auth.token}`
@@ -175,6 +172,7 @@ export default class CloudFlareImages {
       headers['X-Auth-Email'] = this.auth.email
       headers['X-Auth-Key'] = this.auth.key
     }
+    if (contentType) headers['Content-Type'] = contentType
     return headers
   }
 }
