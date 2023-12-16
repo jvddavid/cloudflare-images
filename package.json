@@ -8,6 +8,7 @@
   "files": [
     "build"
   ],
+  "readme": "README.md",
   "repository": {
     "type": "git",
     "url": "git+github.com:jvddavid/cloudflare-images.git"
