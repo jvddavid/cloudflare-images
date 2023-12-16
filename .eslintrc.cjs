@@ -29,6 +29,7 @@ module.exports = {
     '@stylistic/type-annotation-spacing': ['error', { before: false, after: true }],
     '@stylistic/arrow-spacing': ['error', { before: true, after: true }],
     'camelcase': ['off'],
+    '@typescript-eslint/no-explicit-any': ['off'],
   },
   root: true,
 }
