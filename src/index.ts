@@ -3,7 +3,7 @@ Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
 index.ts (c) 2023
 Desc: description
 Created:  2023-12-13T11:57:06.523Z
-Modified: 2023-12-16T01:09:01.968Z
+Modified: 2023-12-16T10:05:04.779Z
 */
 
 import axios from 'axios'
@@ -224,11 +224,7 @@ export default class CloudFlareImages {
    * @example const { success, errors, messages, result } = await cloudflare.listSigningKeys()
    */
   async listSigningKeys() {
-    const response = await this.request({
-      method: 'GET',
-      url: `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/keys`
-    })
-    return this.parseResponse<ListSigningKeys>(response, 'json')
+    return this.get<ListSigningKeys>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/keys`, 'json', 'UTF-8')
   }
 
   ///
@@ -243,11 +239,7 @@ export default class CloudFlareImages {
    * @example const { success, errors, messages, result } = await cloudflare.listVariants()
    */
   async listVariants() {
-    const response = await this.request({
-      method: 'GET',
-      url: `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`
-    })
-    return this.parseResponse<ListVariants>(response, 'json')
+    return this.get<ListVariants>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`)
   }
 
   /**
@@ -259,11 +251,7 @@ export default class CloudFlareImages {
    * @example const { success, errors, messages, result } = await cloudflare.variantDetails('variant_id')
    */
   async variantDetails(variantId: string) {
-    const response = await this.request({
-      method: 'GET',
-      url: `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${variantId}`
-    })
-    return this.parseResponse<VariantDetails>(response, 'json')
+    return this.get<VariantDetails>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${variantId}`)
   }
 
   /**
@@ -277,15 +265,7 @@ export default class CloudFlareImages {
    * @example const { success, errors, messages, result } = await cloudflare.createVariant({ name: 'variant_name', options: { width: 100, height: 100, fit: 'contain', metadata: 'none' } })
    */
   async createVariant(info: CreateVariantOptions) {
-    const response = await this.request({
-      method: 'POST',
-      url: `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`,
-      data: info,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    return this.parseResponse<VariantDetails>(response, 'json')
+    return this.post<VariantDetails>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`, info, 'json', 'UTF-8')
   }
 
   /**
@@ -299,18 +279,10 @@ export default class CloudFlareImages {
    * @example const { success, errors, messages, result } = await cloudflare.updateVariant({ id: 'variant_id', options: { width: 100, height: 100, fit: 'contain', metadata: 'none' } })
    */
   async updateVariant(info: UpdateVariantOptions) {
-    const response = await this.request({
-      method: 'PATCH',
-      url: `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${info.id}`,
-      data: {
-        neverRequireSignedURLs: info.neverRequireSignedURLs,
-        options: info.options
-      },
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    return this.parseResponse<VariantDetails>(response, 'json')
+    return this.patch<VariantDetails>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${info.id}`, {
+      options: info.options,
+      neverRequireSignedURLs: info.neverRequireSignedURLs
+    }, 'json', 'UTF-8')
   }
 
   /**
@@ -343,24 +315,34 @@ export default class CloudFlareImages {
     return this.parseResponse<Result>(response, type)
   }
 
-  private async post<Result>(url: string, data: FormData, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
-    const response = await this.request<Result, FormData>({
+  private async post<Result>(url: string, data: FormData | Record<any, any>, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
+    let headers: Record<string, string> = {}
+    if (data instanceof FormData) {
+      headers = data.getHeaders()
+    } else {
+      headers = {
+        'Content-Type': 'application/json'
+      }
+    }
+
+    const response = await this.request<Result, typeof data>({
       method: 'POST',
       url,
       data,
       type,
       encoding,
-      headers: data.getHeaders()
+      headers
     })
     return this.parseResponse<Result>(response, type)
   }
 
-  private async patch<Result>(url: string, body: Record<string, unknown>, type: ResponseType = 'json'): Promise<DefaultResponse<Result> > {
+  private async patch<Result>(url: string, body: Record<string, unknown>, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
     const response = await this.request<Result, Record<string, unknown>>({
       method: 'PATCH',
       url,
       data: body,
       type,
+      encoding,
       headers: {
         'Content-Type': 'application/json'
       }
@@ -368,11 +350,12 @@ export default class CloudFlareImages {
     return this.parseResponse<Result>(response, type)
   }
 
-  private async delete<Result>(url: string, type: ResponseType = 'json'): Promise<DefaultResponse<Result> > {
+  private async delete<Result>(url: string, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
     const response = await this.request<Result>({
       method: 'DELETE',
       url,
-      type
+      type,
+      encoding
     })
     return this.parseResponse<Result>(response, type)
   }
@@ -415,7 +398,7 @@ export default class CloudFlareImages {
     return headers
   }
 
-  private request<Data = any, Body = any>(info: {
+  private async request<Data = any, Body = any>(info: {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
     url: string
     data?: Body
@@ -425,7 +408,7 @@ export default class CloudFlareImages {
   }) {
     const { method, url, data, headers, type, encoding } = info
     try {
-      return axios.request<Data>({
+      const res = await axios.request<Data>({
         method,
         url,
         data,
@@ -436,7 +419,9 @@ export default class CloudFlareImages {
         responseType: type,
         responseEncoding: encoding
       })
+      return res
     } catch (error: any) {
+      console.dir(error)
       if (error.isAxiosError) {
         const axiosError = error as AxiosError<Data, Body>
         if (axiosError.response) {
