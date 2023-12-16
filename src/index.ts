@@ -3,7 +3,7 @@ Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
 index.ts (c) 2023
 Desc: description
 Created:  2023-12-13T11:57:06.523Z
-Modified: 2023-12-16T01:01:53.255Z
+Modified: 2023-12-16T01:09:01.968Z
 */
 
 import axios from 'axios'
@@ -14,9 +14,13 @@ import { HttpError, RequestError } from './errors'
 
 export default class CloudFlareImages {
   private readonly auth: CloudFlareAuth
-
   private readonly baseUrl = 'https://api.cloudflare.com/client/v4'
 
+  /**
+   * @param auth CloudFlareAuth
+   * @example const cloudflare = new CloudFlareImages({ accountId: 'account_id', email: 'email', key: 'key' })
+   * @example const cloudflare = new CloudFlareImages({ accountId: 'account_id', token: 'token' })
+   */
   constructor(auth: CloudFlareAuth) {
     this.auth = auth
   }

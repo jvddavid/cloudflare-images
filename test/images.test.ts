@@ -1,12 +1,13 @@
 /*
 Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
-index.test.ts (c) 2023
+images.test.ts (c) 2023
 Desc: description
-Created:  2023-12-13T12:12:42.214Z
-Modified: 2023-12-16T00:19:16.740Z
+Created:  2023-12-16T01:03:43.936Z
+Modified: 2023-12-16T01:13:40.176Z
 */
+
 import { describe, it, expect } from 'vitest'
-import CloudFlareImages from '.'
+import CloudFlareImages from '../src/index'
 import type { CloudFlareAuth } from '@/interfaces'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
@@ -39,7 +40,7 @@ const testImagePath = resolve(__dirname, '..', 'test', 'test-image.jpg')
 const testImageBuffer = readFileSync(testImagePath)
 const testImageBase64 = testImageBuffer.toString('base64')
 
-describe('index.test.ts', () => {
+describe('images api', () => {
   it('should pass', () => {
     const sut = makeSut()
     expect(sut).toBeInstanceOf(CloudFlareImages)
@@ -121,6 +122,20 @@ describe('index.test.ts', () => {
     })
     expect(image.success).toBeTruthy()
   })
+  it('should update image', async() => {
+    const sut = makeSut()
+    const image = await sut.uploadImageURL({
+      imageURL: testImageURL,
+      metadata: { test: 'test' },
+    })
+    expect(image.success).toBeTruthy()
+    if (image.result?.id === undefined) throw new Error('image id is undefined')
+    const updateImage = await sut.updateImage({
+      imageId: image.result.id,
+      metadata: { test: 'test2' },
+    })
+    expect(updateImage.success).toBeTruthy()
+  })
   it('should upload and delete images with metadata test', async() => {
     const sut = makeSut()
     const image = await sut.uploadImageURL({
@@ -133,7 +148,7 @@ describe('index.test.ts', () => {
     expect(list.success).toBeTruthy()
     if (list.result?.images === undefined) throw new Error('list is empty')
     for (const image of list.result.images) {
-      if (image.meta?.test === 'test') {
+      if (image.meta?.test === 'test' || image.meta?.test === 'test2') {
         const deleteImage = await sut.deleteImage(image.id)
         expect(deleteImage.success).toBeTruthy()
       }
