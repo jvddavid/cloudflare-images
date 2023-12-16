@@ -3,14 +3,14 @@ Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
 variants.test.ts (c) 2023
 Desc: description
 Created:  2023-12-16T01:03:52.552Z
-Modified: 2023-12-16T01:18:41.509Z
+Modified: 2023-12-16T10:07:58.441Z
 */
 
 import CloudFlareImages from '../src/index'
 import { CloudFlareAuth } from '@/interfaces'
 import { describe, expect, it } from 'vitest'
 
-const testVariantName = 'test-variant'
+const testVariantName = 'test'
 
 function makeSut() {
   if (process.env.TEST_CLOUDFLARE_ACCOUNT_ID === undefined) {
