@@ -421,7 +421,6 @@ export default class CloudFlareImages {
       })
       return res
     } catch (error: any) {
-      console.dir(error)
       if (error.isAxiosError) {
         const axiosError = error as AxiosError<Data, Body>
         if (axiosError.response) {
