@@ -1,10 +1,10 @@
 /*
-Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
-image.ts (c) 2023
-Desc: description
-Created:  2023-12-13T19:15:52.756Z
-Modified: 2023-12-15T23:59:38.129Z
-*/
+ *Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
+ *image.ts (c) 2023
+ *Desc: description
+ *Created:  2023-12-13T19:15:52.756Z
+ *Modified: 2023-12-15T23:59:38.129Z
+ */
 
 import type { AxiosError } from 'axios'
 

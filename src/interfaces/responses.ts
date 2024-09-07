@@ -1,10 +1,10 @@
 /*
-Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
-responses.ts (c) 2023
-Desc: description
-Created:  2023-12-13T19:07:04.300Z
-Modified: 2023-12-16T00:56:59.190Z
-*/
+ *Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
+ *responses.ts (c) 2023
+ *Desc: description
+ *Created:  2023-12-13T19:07:04.300Z
+ *Modified: 2023-12-16T00:56:59.190Z
+ */
 
 export interface ListImages {
   images: Image[]

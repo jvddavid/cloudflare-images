@@ -1,44 +1,47 @@
 /*
-Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
-index.ts (c) 2023
-Desc: description
-Created:  2023-12-13T11:57:06.523Z
-Modified: 2023-12-16T10:05:04.779Z
-*/
+ *Author: João Victor David de Oliveira (j.victordavid2@gmail.com)
+ *index.ts (c) 2023
+ *Desc: description
+ *Created:  2023-12-13T11:57:06.523Z
+ *Modified: 2023-12-16T10:05:04.779Z
+ */
 
+import type { CloudFlareAuth, CloudFlareOptions, CreateVariantOptions, DefaultResponse, DirectUploadUrlV2, DirectUploadUrlV2Options, Image, ImageDetails, ListImages, ListImagesOptions, ListImagesV2, ListImagesV2Options, ListSigningKeys, ListVariants, Stats, UpdateImageOptions, UpdateVariantOptions, UploadImage, UploadImageOptions, UploadImageURLOptions, VariantDetails } from '@/interfaces'
+import type { AxiosError, AxiosResponse, ResponseType, responseEncoding } from 'axios'
 import axios from 'axios'
 import FormData from 'form-data'
-import type { AxiosError, AxiosResponse, ResponseType, responseEncoding } from 'axios'
-import type { CloudFlareAuth, CreateVariantOptions, DefaultResponse, DirectUploadUrlV2, DirectUploadUrlV2Options, Image, ImageDetails, ListImages, ListImagesOptions, ListImagesV2, ListImagesV2Options, ListSigningKeys, ListVariants, Stats, UpdateImageOptions, UpdateVariantOptions, UploadImage, UploadImageOptions, UploadImageURLOptions, VariantDetails } from '@/interfaces'
 import { HttpError, RequestError } from './errors'
 
 export default class CloudFlareImages {
   private readonly auth: CloudFlareAuth
-  private readonly baseUrl = 'https://api.cloudflare.com/client/v4'
+  private readonly baseUrl: string
 
   /**
-   * @param auth CloudFlareAuth
-   * @example const cloudflare = new CloudFlareImages({ accountId: 'account_id', email: 'email', key: 'key' })
-   * @example const cloudflare = new CloudFlareImages({ accountId: 'account_id', token: 'token' })
+   * @param {CloudFlareAuth} auth CloudFlareAuth
+   * @param {CloudFlareOptions} [options] CloudFlareOptions
+   * @example const cloudflare = new CloudFlareImages({ accountId: 'account_id', email: 'email', key: 'key' }, { endpoint: 'https://api.cloudflare.com/client/v4' })
+   * @example const cloudflare = new CloudFlareImages({ accountId: 'account_id', token: 'token' }, { endpoint: 'https://api.cloudflare.com/client/v4' })
+   * @returns {CloudFlareImages} CloudFlareImages
    */
-  constructor(auth: CloudFlareAuth) {
+  constructor(auth: CloudFlareAuth, options?: CloudFlareOptions) {
+    this.baseUrl = options.endpoint ?? 'https://api.cloudflare.com/client/v4'
     this.auth = auth
   }
 
-  ///
-  /// Images v1
-  ///
+  /**
+   * Images v1
+   */
 
   /**
    * list images
-   * @param page page number
-   * @param perPage number of images per page
+   * @param {ListImagesOptions} info list images options
    * @returns object with success, errors, messages and result(images)
    * @throws RequestError
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.listImages({ page: 1, perPage: 1000 })
    */
-  async list(info: ListImagesOptions = { page: 1, perPage: 1000 }) {
+  async list(info: ListImagesOptions = { page: 1,
+perPage: 1000 }): Promise<DefaultResponse<ListImages>> {
     const { page, perPage } = info
     if (page < 1) throw new Error('page must be greater or equal than 1')
     if (perPage < 10) throw new Error('perPage must be greater or equal than 1')
@@ -57,7 +60,7 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.stats()
    */
-  async stats() {
+  async stats(): Promise<DefaultResponse<Stats>> {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/stats`
     return this.get<Stats>(url)
   }
@@ -70,7 +73,7 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.imageDetails('image_id')
    */
-  async imageDetails(imageId: string) {
+  async imageDetails(imageId: string): Promise<DefaultResponse<ImageDetails>> {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}`
     return this.get<ImageDetails>(url)
   }
@@ -83,9 +86,13 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const image = await cloudflare.image('image_id')
    */
-  async baseImage(imageId: string) {
+  async baseImage(imageId: string): Promise<DefaultResponse<string>> {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}/blob`
-    return this.get<string>(url, 'text', 'BASE64')
+    return this.get<string>(
+      url,
+      'text',
+      'BASE64'
+    )
   }
 
   /**
@@ -99,19 +106,42 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.uploadImage({ name: 'image_name', image: 'image_base64', metadata: { key: 'value' }, requireSignedURLs: false })
    */
-  async uploadImage(info: UploadImageOptions) {
+  async uploadImage(info: UploadImageOptions): Promise<DefaultResponse<UploadImage>> {
     const { name, image, metadata, requireSignedURLs } = info
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1`
     const body = new FormData()
-    if (metadata) body.append('metadata', JSON.stringify(metadata), { contentType: 'application/json' })
-    if (requireSignedURLs) body.append('requireSignedURLs', requireSignedURLs.toString())
-    const options = { contentType: 'image/*', filename: name }
+    if (metadata) body.append(
+      'metadata',
+      JSON.stringify(metadata),
+      { contentType: 'application/json' }
+    )
+    if (requireSignedURLs) body.append(
+      'requireSignedURLs',
+      requireSignedURLs.toString()
+    )
+    const options = { contentType: 'image/*',
+      filename: name }
     if (typeof image === 'string') {
-      body.append('file', Buffer.from(image, 'base64'), options)
-    } else {
-      body.append('file', image, options)
+      body.append(
+        'file',
+        Buffer.from(
+          image,
+          'base64'
+        ),
+        options
+      )
     }
-    return this.post<UploadImage>(url, body)
+    else {
+      body.append(
+        'file',
+        image,
+        options
+      )
+    }
+    return this.post<UploadImage>(
+      url,
+      body
+    )
   }
 
   /**
@@ -124,14 +154,27 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.uploadImageURL({ imageURL: 'https://example.com/image.png', metadata: { key: 'value' }, requireSignedURLs: false })
    */
-  async uploadImageURL(info: UploadImageURLOptions) {
+  async uploadImageURL(info: UploadImageURLOptions): Promise<DefaultResponse<UploadImage>> {
     const { imageURL, metadata, requireSignedURLs } = info
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1`
     const body = new FormData()
-    if (metadata) body.append('metadata', JSON.stringify(metadata), { contentType: 'application/json' })
-    if (requireSignedURLs) body.append('requireSignedURLs', requireSignedURLs.toString())
-    body.append('url', imageURL)
-    return this.post<UploadImage>(url, body)
+    if (metadata) body.append(
+      'metadata',
+      JSON.stringify(metadata),
+      { contentType: 'application/json' }
+    )
+    if (requireSignedURLs) body.append(
+      'requireSignedURLs',
+      requireSignedURLs.toString()
+    )
+    body.append(
+      'url',
+      imageURL
+    )
+    return this.post<UploadImage>(
+      url,
+      body
+    )
   }
 
   /**
@@ -144,10 +187,14 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.updateImage({ imageId: 'image_id', metadata: { key: 'value' }, requireSignedURLs: false })
    */
-  async updateImage(info: UpdateImageOptions) {
+  async updateImage(info: UpdateImageOptions): Promise<DefaultResponse<Image>> {
     const { imageId, metadata, requireSignedURLs } = info
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}`
-    return this.patch<Image>(url, { metadata, requireSignedURLs })
+    return this.patch<Image>(
+      url,
+      { metadata,
+        requireSignedURLs }
+    )
   }
 
   /**
@@ -158,14 +205,14 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.deleteImage('image_id')
    */
-  async deleteImage(imageId: string) {
+  async deleteImage(imageId: string): Promise<DefaultResponse<Record<string, never>>> {
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/${imageId}`
     return this.delete<Record<string, never>>(url)
   }
 
-  ///
-  /// Images v2
-  ///
+  /**
+   * Images v2
+   */
 
   /**
    * list images v2
@@ -177,15 +224,23 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.listImagesV2({ perPage: 1000, sortOrder: null, continuationToken: null })
    */
-  async listV2(info: ListImagesV2Options = { perPage: 1000, sortOrder: null, continuationToken: null }) {
+  async listV2(info: ListImagesV2Options = { perPage: 1000,
+sortOrder: null,
+continuationToken: null }): Promise<DefaultResponse<ListImagesV2>> {
     const { perPage, sortOrder, continuationToken } = info
     if (perPage < 10) throw new Error('perPage must be greater or equal than 1')
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v2`
     const query = new URLSearchParams({
       per_page: perPage.toString()
     })
-    if (sortOrder) query.append('sort_order', sortOrder)
-    if (continuationToken) query.append('continuation_token', continuationToken)
+    if (sortOrder) query.append(
+      'sort_order',
+      sortOrder
+    )
+    if (continuationToken) query.append(
+      'continuation_token',
+      continuationToken
+    )
     return this.get<ListImagesV2>(`${url}?${query.toString()}`)
   }
 
@@ -199,22 +254,40 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.directUploadUrlV2({ expiry: new Date(Date.now() + 1000 * 60 * 60 * 1), metadata: { key: 'value' }, requireSignedURLs: false })
    */
-  async directUploadUrlV2(info: DirectUploadUrlV2Options = { }) {
+  async directUploadUrlV2(info: DirectUploadUrlV2Options = { }): Promise<DefaultResponse<DirectUploadUrlV2>> {
     const { expiry, metadata, requireSignedURLs } = info
     const url = `${this.baseUrl}/accounts/${this.auth.accountId}/images/v2/direct_upload`
     const body = new FormData()
-    if (expiry) body.append('expiry', expiry.toISOString())
+    if (expiry) body.append(
+      'expiry',
+      expiry.toISOString()
+    )
     else {
-      body.append('expiry', new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString())
+      body.append(
+        'expiry',
+        new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString()
+      )
     }
-    if (metadata) body.append('metadata', JSON.stringify(metadata), { contentType: 'application/json' })
-    if (requireSignedURLs) body.append('requireSignedURLs', requireSignedURLs.toString())
-    return this.post<DirectUploadUrlV2>(url, body, 'json', 'UTF-8')
+    if (metadata) body.append(
+      'metadata',
+      JSON.stringify(metadata),
+      { contentType: 'application/json' }
+    )
+    if (requireSignedURLs) body.append(
+      'requireSignedURLs',
+      requireSignedURLs.toString()
+    )
+    return this.post<DirectUploadUrlV2>(
+      url,
+      body,
+      'json',
+      'UTF-8'
+    )
   }
 
-  ///
-  /// Images keys
-  ///
+  /**
+   * Images keys
+   */
 
   /**
    * list signing keys
@@ -223,13 +296,17 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.listSigningKeys()
    */
-  async listSigningKeys() {
-    return this.get<ListSigningKeys>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/keys`, 'json', 'UTF-8')
+  async listSigningKeys(): Promise<DefaultResponse<ListSigningKeys>> {
+    return this.get<ListSigningKeys>(
+      `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/keys`,
+      'json',
+      'UTF-8'
+    )
   }
 
-  ///
-  /// Images variants
-  ///
+  /**
+   * Images variants
+   */
 
   /**
    * list variants
@@ -238,7 +315,7 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.listVariants()
    */
-  async listVariants() {
+  async listVariants(): Promise<DefaultResponse<ListVariants>> {
     return this.get<ListVariants>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`)
   }
 
@@ -250,7 +327,7 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.variantDetails('variant_id')
    */
-  async variantDetails(variantId: string) {
+  async variantDetails(variantId: string): Promise<DefaultResponse<VariantDetails>> {
     return this.get<VariantDetails>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${variantId}`)
   }
 
@@ -264,8 +341,13 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.createVariant({ name: 'variant_name', options: { width: 100, height: 100, fit: 'contain', metadata: 'none' } })
    */
-  async createVariant(info: CreateVariantOptions) {
-    return this.post<VariantDetails>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`, info, 'json', 'UTF-8')
+  async createVariant(info: CreateVariantOptions): Promise<DefaultResponse<VariantDetails>> {
+    return this.post<VariantDetails>(
+      `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants`,
+      info,
+      'json',
+      'UTF-8'
+    )
   }
 
   /**
@@ -278,11 +360,16 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.updateVariant({ id: 'variant_id', options: { width: 100, height: 100, fit: 'contain', metadata: 'none' } })
    */
-  async updateVariant(info: UpdateVariantOptions) {
-    return this.patch<VariantDetails>(`${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${info.id}`, {
-      options: info.options,
-      neverRequireSignedURLs: info.neverRequireSignedURLs
-    }, 'json', 'UTF-8')
+  async updateVariant(info: UpdateVariantOptions): Promise<DefaultResponse<VariantDetails>> {
+    return this.patch<VariantDetails>(
+      `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${info.id}`,
+      {
+        options: info.options,
+        neverRequireSignedURLs: info.neverRequireSignedURLs
+      },
+      'json',
+      'UTF-8'
+    )
   }
 
   /**
@@ -293,17 +380,20 @@ export default class CloudFlareImages {
    * @throws Error
    * @example const { success, errors, messages, result } = await cloudflare.deleteVariant('variant_id')
    */
-  async deleteVariant(variantId: string) {
+  async deleteVariant(variantId: string): Promise<DefaultResponse<Record<string, never>>> {
     const response = await this.request({
       method: 'DELETE',
       url: `${this.baseUrl}/accounts/${this.auth.accountId}/images/v1/variants/${variantId}`
     })
-    return this.parseResponse<Record<string, never>>(response, 'json')
+    return this.parseResponse<Record<string, never>>(
+      response,
+      'json'
+    )
   }
 
-  ///
-  /// Private
-  ///
+  /**
+   * Private
+   */
 
   private async get<Result>(url: string, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
     const response = await this.request<Result>({
@@ -312,14 +402,18 @@ export default class CloudFlareImages {
       type,
       encoding
     })
-    return this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(
+      response,
+      type
+    )
   }
 
-  private async post<Result>(url: string, data: FormData | Record<any, any>, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
+  private async post<Result>(url: string, data: FormData | Record<never, never>, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
     let headers: Record<string, string> = {}
     if (data instanceof FormData) {
       headers = data.getHeaders()
-    } else {
+    }
+    else {
       headers = {
         'Content-Type': 'application/json'
       }
@@ -333,7 +427,10 @@ export default class CloudFlareImages {
       encoding,
       headers
     })
-    return this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(
+      response,
+      type
+    )
   }
 
   private async patch<Result>(url: string, body: Record<string, unknown>, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
@@ -347,7 +444,10 @@ export default class CloudFlareImages {
         'Content-Type': 'application/json'
       }
     })
-    return this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(
+      response,
+      type
+    )
   }
 
   private async delete<Result>(url: string, type: ResponseType = 'json', encoding?: responseEncoding): Promise<DefaultResponse<Result> > {
@@ -357,7 +457,10 @@ export default class CloudFlareImages {
       type,
       encoding
     })
-    return this.parseResponse<Result>(response, type)
+    return this.parseResponse<Result>(
+      response,
+      type
+    )
   }
 
   private async parseResponse<T>(response: AxiosResponse, type: ResponseType): Promise<DefaultResponse<T>> {
@@ -383,14 +486,15 @@ export default class CloudFlareImages {
     }
   }
 
-  private getHeaders(contentType?: string) {
+  private getHeaders(contentType?: string): Record<string, string> {
     const headers: Record<string, string> = {
-      'Accept': '*/*',
+      Accept: '*/*',
       'User-Agent': 'CloudflareImages/1.0.0'
     }
     if ('token' in this.auth) {
       headers.Authorization = `Bearer ${this.auth.token}`
-    } else {
+    }
+    else {
       headers['X-Auth-Email'] = this.auth.email
       headers['X-Auth-Key'] = this.auth.key
     }
@@ -398,14 +502,14 @@ export default class CloudFlareImages {
     return headers
   }
 
-  private async request<Data = any, Body = any>(info: {
+  private async request<Data = never, Body = never>(info: {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
     url: string
     data?: Body
     headers?: Record<string, string>
     type?: ResponseType
     encoding?: responseEncoding
-  }) {
+  }): Promise<AxiosResponse<Data, Body>> {
     const { method, url, data, headers, type, encoding } = info
     try {
       const res = await axios.request<Data>({
@@ -420,7 +524,8 @@ export default class CloudFlareImages {
         responseEncoding: encoding
       })
       return res
-    } catch (error: any) {
+    }
+    catch (error) {
       if (error.isAxiosError) {
         const axiosError = error as AxiosError<Data, Body>
         if (axiosError.response) {

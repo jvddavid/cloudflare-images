@@ -1,59 +1,82 @@
 {
-	"name": "@jvddavid/cloudflare-images",
-	"version": "1.0.3",
-	"description": "Cloudflare Images API wrapper",
-	"type": "commonjs",
-	"main": "build/index.js",
-	"types": "build/index.d.ts",
-	"files": ["build"],
-	"readme": "README.md",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/jvddavid/cloudflare-images.git"
-	},
-	"keywords": [
-		"cloudflare",
-		"cf",
-		"images",
-		"image",
-		"api",
-		"wrapper",
-		"typescript",
-		"javascript",
-		"upload",
-		"download"
-	],
-	"author": {
-		"name": "João David",
-		"email": "j.victordavid2@gmail.com"
-	},
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/jvddavid/cloudflare-images/issues"
-	},
-	"homepage": "https://github.com/jvddavid/cloudflare-images",
-	"scripts": {
-		"build:types": "tsc -p tsconfig.build.json",
-		"build:js": "node -r esbuild-register scripts/build.ts",
-		"build": "npm run build:js && npm run build:types",
-		"lint": "eslint src/**/* --fix",
-		"test": "VITE_CJS_IGNORE_WARNING=true vitest --run --config vitest.config.ts",
-		"prepublishOnly": "npm run build && npm run test"
-	},
-	"devDependencies": {
-		"@stylistic/eslint-plugin": "^1.5.1",
-		"@types/node": "^20.10.4",
-		"@typescript-eslint/eslint-plugin": "^6.14.0",
-		"@typescript-eslint/parser": "^6.14.0",
-		"dotenv": "^16.3.1",
-		"esbuild": "^0.19.9",
-		"esbuild-register": "^3.5.0",
-		"eslint": "^8.55.0",
-		"typescript": "^5.3.3",
-		"vitest": "^1.0.4"
-	},
-	"dependencies": {
-		"axios": "^1.6.2",
-		"form-data": "^4.0.0"
-	}
+  "name": "@jvddavid/cloudflare-images",
+  "license": "MIT",
+  "version": "1.0.4",
+  "description": "Cloudflare Images API wrapper",
+  "keywords": [
+    "cloudflare",
+    "cf",
+    "images",
+    "image",
+    "api",
+    "wrapper",
+    "typescript",
+    "javascript",
+    "upload",
+    "download"
+  ],
+  "author": {
+    "name": "João Victor Davi de Oliveira",
+    "email": "j.victordavid2@gmail.com",
+    "url": "https://github.com/jvddavid/cloudflare-images"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/jvddavid/cloudflare-images.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jvddavid/cloudflare-images/issues"
+  },
+  "homepage": "https://github.com/jvddavid/cloudflare-images",
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "type": "commonjs",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json",
+    "tsconfig.json"
+  ],
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@stylistic/eslint-plugin": "^2.7.2",
+    "@types/node": "^22.5.4",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0",
+    "pkgroll": "^2.4.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.4.0",
+    "vitest": "^2.0.5"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run type:check && npm run lint && npm run build",
+    "start": "node dist/index.mjs",
+    "type:check": "tsc --noEmit",
+    "build": "pkgroll --clean-dist --minify --target=es2023 --target=node20",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint --fix src tests",
+    "dev": "tsx --watch src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "form-data": "^4.0.0"
+  }
 }
